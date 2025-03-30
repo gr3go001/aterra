@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda de Salas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+  <h1>Agendamentos</h1>
+  <a href="/agendar" class="btn btn-success mb-3">Novo Agendamento</a>
+  <a href="/cadastrar_cliente" class="btn btn-primary mb-3">Cadastrar Cliente</a>
+  <a href="/pesquisar_cliente" class="btn btn-secondary mb-3">Pesquisar Cliente</a>
+  <a href="/relatorio" class="btn btn-warning mb-3">Gerar Relatório</a>
+  <a href="/editar_cliente" class="btn btn-primary mb-3">Editar Cliente</a>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Sala</th>
+        <th>Início</th>
+        <th>Fim</th>
+        <th>Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for agendamento in agendamentos %}
+        <tr>
+          <td>
+            <a href="{{ url_for('visualizar_cliente', id=agendamento.cliente.id) }}">
+              {{ agendamento.cliente.nome }}
+            </a>
+          </td>
+          <td>{{ agendamento.sala }}</td>
+          <td>{{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ 'Sim' if agendamento.pago else 'Não' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

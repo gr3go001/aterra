@@ -1,43 +1,55 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Agenda de Salas</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container mt-4">
-  <h1>Agendamentos</h1>
-  <a href="/agendar" class="btn btn-success mb-3">Novo Agendamento</a>
-  <a href="/cadastrar_cliente" class="btn btn-primary mb-3">Cadastrar Cliente</a>
-  <a href="/pesquisar_cliente" class="btn btn-secondary mb-3">Pesquisar Cliente</a>
-  <a href="/relatorio" class="btn btn-warning mb-3">Gerar Relatório</a>
-  <a href="/editar_cliente" class="btn btn-primary mb-3">Editar Cliente</a>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Agendamentos</h2>
+    <div>
+      <a href="{{ url_for('main.pesquisar_cliente') }}" class="btn btn-info me-2">Pesquisar Cliente</a>
+      <a href="{{ url_for('main.cadastrar_cliente') }}" class="btn btn-success me-2">Cadastrar Cliente</a>
+      <a href="{{ url_for('main.agendar') }}" class="btn btn-primary me-2">Novo Agendamento</a>
+      <a href="{{ url_for('main.relatorio') }}" class="btn btn-warning">Relatório</a>
+      <a href="{{ url_for('main.relatorio_salas') }}" class="btn btn-info">Relatório Salas</a>
+    </div>
+  </div>
 
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Cliente</th>
-        <th>Sala</th>
-        <th>Início</th>
-        <th>Fim</th>
-        <th>Pago</th>
-      </tr>
-    </thead>
-    <tbody>
+  {% if agendamentos %}
+    <div class="row">
       {% for agendamento in agendamentos %}
-        <tr>
-          <td>
-            <a href="{{ url_for('visualizar_cliente', id=agendamento.cliente.id) }}">
-              {{ agendamento.cliente.nome }}
-            </a>
-          </td>
-          <td>{{ agendamento.sala }}</td>
-          <td>{{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ 'Sim' if agendamento.pago else 'Não' }}</td>
-        </tr>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ agendamento.cliente.nome }}</h5>
+              <p>
+                <span class="badge bg-info text-dark">
+                   {{ agendamento.sala_rel.nome }}
+                  if {{ agendamento.sala_rel.nome }}
+                  else 'Sem Sala' 
+                </span>
+              </p>
+              <p><strong>Início:</strong> {{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</p>
+              <p><strong>Fim:</strong> {{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</p>
+              <p><strong>Valor:</strong> R$ {{ '%.2f' | format(agendamento.valor_total) }}</p>
+              <p><strong>Entrada:</strong> R$ {{ '%.2f' | format(agendamento.entrada) }}</p>
+              <p><strong>Saldo:</strong> R$ {{ '%.2f' | format(agendamento.saldo) }}</p>
+
+              {% if agendamento.pago %}
+                <span class="badge bg-success">Pago</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pendente</span>
+              {% endif %}
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+              <a href="{{ url_for('main.editar_agendamento', id=agendamento.id) }}" class="btn btn-outline-primary btn-sm">Editar</a>
+              <a href="{{ url_for('main.excluir_agendamento', id=agendamento.id) }}" class="btn btn-outline-danger btn-sm">Excluir</a>
+            </div>
+          </div>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+    </div>
+  {% else %}
+    <div class="alert alert-secondary text-center">
+      Nenhum agendamento encontrado.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

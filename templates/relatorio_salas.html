@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório por Sala</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="container mt-4">
+  <h1 class="mb-4">Relatório de Rendimento por Sala</h1>
+
+  <form method="POST" class="mb-4">
+    <div class="row">
+      <div class="col-md-3">
+        <label for="mes" class="form-label">Escolher Mês:</label>
+        <select name="mes" id="mes" class="form-select">
+          <option value="">-- Selecione --</option>
+          {% for mes in meses %}
+            <option value="{{ mes.valor }}" {% if mes.valor == mes_selecionado %}selected{% endif %}>{{ mes.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="data_inicio" class="form-label">Data Início:</label>
+        <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio or '' }}">
+      </div>
+      <div class="col-md-3">
+        <label for="data_fim" class="form-label">Data Fim:</label>
+        <input type="date" name="data_fim" class="form-control" value="{{ data_fim or '' }}">
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+      </div>
+    </div>
+  </form>
+
+  {% if resultados %}
+    <h5 class="mb-3">Resumo do Período</h5>
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>Sala</th>
+          <th>Nº Agendamentos</th>
+          <th>Total Arrecadado</th>
+          <th>Média por Agendamento</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sala in resultados %}
+          <tr>
+            <td>{{ sala.nome }}</td>
+            <td>{{ sala.quantidade }}</td>
+            <td>R$ {{ '%.2f' | format(sala.total) }}</td>
+            <td>R$ {{ '%.2f' | format(sala.media) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <canvas id="graficoSalas" height="100"></canvas>
+  {% else %}
+    <p class="text-muted">Nenhum dado encontrado para o período selecionado.</p>
+  {% endif %}
+
+  <a href="/" class="btn btn-secondary mt-4">Voltar</a>
+
+  {% if resultados %}
+    <!-- Dados JSON para o gráfico -->
+    <script id="dados-salas" type="application/json">
+      {
+        "labels": {{ labels | tojson }},
+        "valores": {{ valores | tojson }}
+      }
+    </script>
+
+    <!-- Gráfico -->
+    <script>
+      const dados = JSON.parse(document.getElementById('dados-salas').textContent);
+
+      const ctx = document.getElementById('graficoSalas').getContext('2d');
+      const grafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dados.labels,
+          datasets: [{
+            label: 'Rendimento por Sala (R$)',
+            data: dados.valores,
+            backgroundColor: ['#1abc9c', '#3498db', '#f39c12']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return 'R$ ' + context.parsed.y.toFixed(2);
+                }
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    </script>
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

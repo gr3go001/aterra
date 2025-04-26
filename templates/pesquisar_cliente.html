@@ -1,26 +1,77 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Pesquisar Cliente</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Pesquisar Cliente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
+    <style>
+        body {
+            background: #eef2f7;
+        }
+        .highlight {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.7rem;
+            margin-bottom: 30px;
+        }
+    </style>
 </head>
-<body class="container mt-4">
-  <h1>Pesquisar Cliente</h1>
-  <form method="get">
-    <input type="text" name="termo" class="form-control" placeholder="Nome ou Email" value="{{ termo or '' }}">
-    <button type="submit" class="btn btn-primary mt-2">Pesquisar</button>
-  </form>
+<body class="container py-5">
 
-  {% if resultados %}
-    <h3 class="mt-4">Resultados:</h3>
-    <ul class="list-group">
-      {% for cliente in resultados %}
-        <li class="list-group-item">
-          <a href="{{ url_for('visualizar_cliente', id=cliente.id) }}">{{ cliente.nome }} - {{ cliente.email }}</a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    <div class="highlight">
+        🔎 Encontre seu clientes!
+    </div>
+    <br>
+    
+<div class="mt-4">
+  <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary btn-sm">
+      ⬅️ Voltar para a Página Inicial
+  </a>
+</div>
+     <br>
+     <br>
+    <form id="form-pesquisa" class="input-group mb-5">
+        <input type="text" id="termo" class="form-control form-control-lg awesomplete" placeholder="Digite o nome ou email..." data-list="">
+        <button class="btn btn-primary btn-lg" type="submit">Pesquisar</button>
+    </form>
+
+    <div id="resultados" class="row g-4">
+        {% for cliente in resultados %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ cliente.nome }}</h5>
+                    <p class="card-text">
+                        📧 {{ cliente.email or 'Sem email' }}<br>
+                        📱 {{ cliente.telefone or 'Sem telefone' }}
+                    </p>
+                    <a href="{{ url_for('main.visualizar_cliente', id=cliente.id) }}" class="btn btn-success w-100 mb-2">Visualizar</a>
+                    <a href="{{ url_for('main.editar_cliente', id=cliente.id) }}" class="btn btn-warning w-100 mb-2">Editar</a>
+                    <a href="{{ url_for('main.excluir_cliente', id=cliente.id) }}" class="btn btn-danger w-100" onclick="return confirm('Deseja excluir este cliente?')">Excluir</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+    <script>
+        async function carregarSugestoes() {
+            const response = await fetch('/buscar_clientes?termo=');
+            const clientes = await response.json();
+            const lista = clientes.map(c => `${c.nome} (${c.email})`);
+            document.getElementById('termo').setAttribute('data-list', lista.join(', '));
+        }
+
+        window.onload = carregarSugestoes;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

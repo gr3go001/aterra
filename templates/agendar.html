@@ -4,36 +4,186 @@
   <meta charset="UTF-8">
   <title>Agendar Sala</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .form-section {
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const nomeInput = document.getElementById('nome_cliente');
+      const clienteIdInput = document.getElementById('cliente_id');
+      const aviso = document.getElementById('aviso-cliente');
+      const btnCadastrar = document.getElementById('btn-cadastrar');
+      const formCadastro = document.getElementById('form-cadastro');
+      const btnFinalizar = document.getElementById('btn-finalizar-cadastro');
+      const btnAgendar = document.getElementById('botao-agendar');
+
+      nomeInput.addEventListener('input', async () => {
+        const nome = nomeInput.value.trim();
+        clienteIdInput.value = '';
+        if (!nome) {
+          aviso.textContent = '';
+          btnCadastrar.style.display = 'none';
+          formCadastro.style.display = 'none';
+          btnAgendar.disabled = true;
+          return;
+        }
+
+        const resposta = await fetch(`/autocomplete_clientes?termo=${encodeURIComponent(nome)}`);
+        const sugestoes = await resposta.json();
+
+        const sugestoesFiltradas = sugestoes.filter(s => s.nome.toLowerCase() === nome.toLowerCase());
+        if (sugestoesFiltradas.length > 0) {
+          clienteIdInput.value = sugestoesFiltradas[0].id;
+          aviso.innerHTML = '<span class="text-success">Cliente encontrado.</span>';
+          btnAgendar.disabled = false;
+          btnCadastrar.style.display = 'none';
+          formCadastro.style.display = 'none';
+        } else {
+          aviso.innerHTML = '<span class="text-danger">Cliente não encontrado.</span>';
+          btnAgendar.disabled = true;
+          btnCadastrar.style.display = 'inline-block';
+        }
+      });
+
+      btnCadastrar.addEventListener('click', () => {
+        formCadastro.style.display = 'block';
+      });
+
+      btnFinalizar.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const form = document.getElementById('formulario-completo');
+        const formData = new FormData(form);
+        const resposta = await fetch('/cadastrar_cliente_rapido', {
+          method: 'POST',
+          body: formData
+        });
+        const dados = await resposta.json();
+
+        if (dados.sucesso) {
+          clienteIdInput.value = dados.cliente_id;
+          nomeInput.value = dados.nome;
+          aviso.innerHTML = '<span class="text-success">Cliente cadastrado com sucesso!</span>';
+          formCadastro.style.display = 'none';
+          btnCadastrar.style.display = 'none';
+          btnAgendar.disabled = false;
+        } else {
+          aviso.innerHTML = '<span class="text-danger">Erro ao cadastrar cliente.</span>';
+        }
+      });
+    });
+  </script>
 </head>
 <body class="container mt-4">
-  <h1>Agendar Sala</h1>
-  <form method="post">
-    <div class="mb-3">
-      <label>Cliente:</label>
-      <select name="cliente_id" class="form-select" required>
-        {% for cliente in clientes %}
-          <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
-        {% endfor %}
-      </select>
+  <h1 class="mb-4">Novo Agendamento</h1>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" id="formulario-completo">
+    <input type="hidden" name="cliente_id" id="cliente_id">
+
+    <div class="form-section">
+      <label for="nome_cliente" class="form-label">Nome do Cliente:</label>
+      <input type="text" id="nome_cliente" name="nome_cliente" class="form-control" required>
+      <div id="aviso-cliente" class="mt-2"></div>
+      <button type="button" id="btn-cadastrar" class="btn btn-outline-warning mt-2" style="display:none;">Cadastrar Cliente</button>
     </div>
-    <div class="mb-3">
-      <label>Sala:</label>
-      <input type="text" name="sala" class="form-control" required>
+
+    <div class="form-section" id="form-cadastro" style="display:none;">
+      <h5>Cadastro Rápido</h5>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label>Email:</label>
+          <input type="email" name="email" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label>Telefone:</label>
+          <input type="text" name="telefone" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label>Endereço:</label>
+          <input type="text" name="endereco" class="form-control">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label>CPF:</label>
+          <input type="text" name="cpf" class="form-control">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label>Serviço:</label>
+          <input type="text" name="servico" class="form-control">
+        </div>
+      </div>
+      <button id="btn-finalizar-cadastro" class="btn btn-primary">Finalizar Cadastro</button>
     </div>
-    <div class="mb-3">
-      <label>Data e Hora de Início:</label>
-      <input type="datetime-local" name="data_inicio" class="form-control" required>
+
+    <div class="form-section">
+      <div class="row">
+        <div class="mb-3">
+          <label for="sala_id" class="form-label">Sala:</label>
+          <select name="sala_id" class="form-select" required>
+            <option value="">Selecione a sala</option>
+            {% for sala in salas %}
+              <option value="{{ sala.id }}" {% if sala.id == sala_id %}selected{% endif %}>{{ sala.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <label>Data Início:</label>
+          <input type="datetime-local" name="data_inicio" class="form-control" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label>Data Fim:</label>
+          <input type="datetime-local" name="data_fim" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label>Valor Total:</label>
+          <input type="number" step="0.01" name="valor_total" class="form-control" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label>Entrada:</label>
+          <input type="number" step="0.01" name="entrada" class="form-control" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label>Data Pagamento Entrada:</label>
+          <input type="date" name="data_pagamento_entrada" class="form-control">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label>Método de Pagamento:</label>
+        <select name="metodo_pagamento_entrada" class="form-select">
+          <option value="">Selecionar</option>
+          <option value="Pix">Pix</option>
+          <option value="Crédito">Crédito</option>
+          <option value="Débito">Débito</option>
+        </select>
+      </div>
     </div>
-    <div class="mb-3">
-      <label>Data e Hora de Fim:</label>
-      <input type="datetime-local" name="data_fim" class="form-control" required>
+
+    <div class="d-flex justify-content-between">
+      <a href="/" class="btn btn-outline-secondary">Voltar</a>
+      <button type="submit" id="botao-agendar" name="acao" value="agendar" class="btn btn-success" disabled>Agendar</button>
     </div>
-    <div class="mb-3 form-check">
-      <input type="checkbox" name="pago" class="form-check-input">
-      <label class="form-check-label">Pago</label>
-    </div>
-    <button type="submit" class="btn btn-success">Agendar</button>
-    <a href="/" class="btn btn-secondary">Voltar</a>
   </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

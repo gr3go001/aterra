@@ -2,48 +2,93 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Relatório</title>
+  <title>Relatório de Agendamentos</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="container mt-4">
-  <h1>Relatório de Agendamentos</h1>
-  <form method="post">
-    <div class="mb-3">
-      <label>Data Inicial:</label>
-      <input type="date" name="inicio" class="form-control" required>
+  <h1 class="mb-4">Relatório de Agendamentos</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" class="row g-3 align-items-end mb-4">
+    <div class="col-auto">
+      <label for="data_inicio" class="form-label">Data Início:</label>
+      <input type="date" id="data_inicio" name="data_inicio" class="form-control" required value="{{ request.form.get('data_inicio', '') }}">
     </div>
-    <div class="mb-3">
-      <label>Data Final:</label>
-      <input type="date" name="fim" class="form-control" required>
+    <div class="col-auto">
+      <label for="data_fim" class="form-label">Data Fim:</label>
+      <input type="date" id="data_fim" name="data_fim" class="form-control" required value="{{ request.form.get('data_fim', '') }}">
     </div>
-    <button type="submit" class="btn btn-success">Gerar Relatório</button>
-    <a href="/" class="btn btn-secondary">Voltar</a>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
   </form>
 
   {% if agendamentos %}
-    <h3 class="mt-4">Resultados:</h3>
-    <table class="table table-bordered">
-      <thead>
+    <form method="post" action="{{ url_for('main.exportar_relatorio_csv') }}">
+      <input type="hidden" name="data_inicio" value="{{ request.form.get('data_inicio', '') }}">
+      <input type="hidden" name="data_fim" value="{{ request.form.get('data_fim', '') }}">
+      <button type="submit" class="btn btn-success mb-3">Exportar CSV</button>
+    </form>
+
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
         <tr>
           <th>Cliente</th>
           <th>Sala</th>
           <th>Início</th>
           <th>Fim</th>
+          <th>Valor Total</th>
+          <th>Entrada</th>
+          <th>Saldo</th>
           <th>Pago</th>
         </tr>
       </thead>
       <tbody>
-        {% for ag in agendamentos %}
+        {% for agendamento in agendamentos %}
           <tr>
-            <td>{{ ag.cliente.nome }}</td>
-            <td>{{ ag.sala }}</td>
-            <td>{{ ag.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
-            <td>{{ ag.data_fim.strftime('%d/%m/%Y %H:%M') }}</td>
-            <td>{{ 'Sim' if ag.pago else 'Não' }}</td>
+            <td>{{ agendamento.cliente.nome }}</td>
+            <td>{{ agendamento.sala }}</td>
+            <td>{{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>R$ {{ '%.2f' | format(agendamento.valor_total) }}</td>
+            <td>R$ {{ '%.2f' | format(agendamento.entrada) }}</td>
+            <td>R$ {{ '%.2f' | format(agendamento.saldo) }}</td>
+            <td>
+              {% if agendamento.pago %}
+                <span class="badge bg-success">Sim</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Não</span>
+              {% endif %}
+            </td>
+            <!-- <td>
+              {% if agendamento.data_pagamento %}
+                {{ agendamento.data_pagamento.strftime('%d/%m/%Y') }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td> -->
           </tr>
-        {% endfor %}
+        {% endfor %}    
       </tbody>
     </table>
+  {% else %}
+    <p class="text-muted">Nenhum agendamento encontrado para o período selecionado.</p>
   {% endif %}
+
+  <!-- Botão de voltar -->
+  <a href="javascript:history.back()" class="btn btn-outline-secondary mt-4">Voltar</a>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

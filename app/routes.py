@@ -3,7 +3,7 @@ from app import db
 from app.models import Cliente, Agendamento, Sala
 from app.utils import verificar_conflito
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import or_, cast
 from sqlalchemy.orm import joinedload
 import unicodedata
 import csv
@@ -15,6 +15,46 @@ def normalizar(texto):
     if not texto:
         return ""
     return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower()
+
+
+@main.route('/busca')
+def busca_agendamentos():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify([])
+
+    filtro = f"%{q}%"
+    resultados = (
+        Agendamento.query
+        .join(Cliente, Agendamento.cliente_id == Cliente.id)
+        .options(
+            joinedload(Agendamento.cliente), 
+            joinedload(Agendamento.sala_rel)
+        )
+        .filter(
+            or_(
+                Cliente.nome.ilike(filtro),
+                Cliente.email.ilike(filtro),
+                cast(Agendamento.data_inicio, db.String).ilike(filtro)
+            )
+        )
+        .all()
+    )
+
+    lista = [{
+        'id': a.id,
+        'nome': a.cliente.nome,
+        'email': a.cliente.email,
+        'sala': a.sala_rel.nome,
+        'data_inicio': a.data_inicio.isoformat(),
+        'data_fim': a.data_fim.isoformat(),
+        'valor_total': a.valor_total,
+        'entrada': a.entrada,
+        'saldo': a.saldo,
+        'pago': a.pago
+    } for a in resultados]
+
+    return jsonify(lista)
 
 
 

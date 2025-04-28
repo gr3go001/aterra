@@ -1,55 +1,156 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+  .search-container {
+    display: inline-flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  #search-input {
+    border: none;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    outline: none;
+    width: 200px;
+  }
+  #search-btn, #clear-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 6px 8px;
+  }
+  #search-btn:hover, #clear-btn:hover { background: #f0f0f0; }
+  #clear-btn { display: none; font-weight: bold; color: #666; }
+</style>
+
+<!-- Linha 1: Título e buscador -->
+<div class="row align-items-center mb-3">
+  <div class="col-md-6">
     <h2>Agendamentos</h2>
-    <div>
-      <a href="{{ url_for('main.pesquisar_cliente') }}" class="btn btn-info me-2">Pesquisar Cliente</a>
-      <a href="{{ url_for('main.cadastrar_cliente') }}" class="btn btn-success me-2">Cadastrar Cliente</a>
-      <a href="{{ url_for('main.agendar') }}" class="btn btn-primary me-2">Novo Agendamento</a>
-      <a href="{{ url_for('main.relatorio') }}" class="btn btn-warning">Relatório</a>
-      <a href="{{ url_for('main.relatorio_salas') }}" class="btn btn-info">Relatório Salas</a>
+  </div>
+  <div class="col-md-6 text-end">
+    <div class="search-container">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Buscar agendamentos…"
+        autocomplete="off"
+      />
+      <button id="clear-btn" title="Limpar pesquisa">×</button>
+      <button id="search-btn" title="Buscar">🔍</button>
     </div>
   </div>
-
-  {% if agendamentos %}
-    <div class="row">
-      {% for agendamento in agendamentos %}
-        <div class="col-md-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body">
-              <h5 class="card-title">{{ agendamento.cliente.nome }}</h5>
-              <p>
-                <span class="badge bg-info text-dark">
-                   {{ agendamento.sala_rel.nome }}
-                  if {{ agendamento.sala_rel.nome }}
-                  else 'Sem Sala' 
-                </span>
-              </p>
-              <p><strong>Início:</strong> {{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</p>
-              <p><strong>Fim:</strong> {{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</p>
-              <p><strong>Valor:</strong> R$ {{ '%.2f' | format(agendamento.valor_total) }}</p>
-              <p><strong>Entrada:</strong> R$ {{ '%.2f' | format(agendamento.entrada) }}</p>
-              <p><strong>Saldo:</strong> R$ {{ '%.2f' | format(agendamento.saldo) }}</p>
-
-              {% if agendamento.pago %}
-                <span class="badge bg-success">Pago</span>
-              {% else %}
-                <span class="badge bg-warning text-dark">Pendente</span>
-              {% endif %}
-            </div>
-            <div class="card-footer d-flex justify-content-between">
-              <a href="{{ url_for('main.editar_agendamento', id=agendamento.id) }}" class="btn btn-outline-primary btn-sm">Editar</a>
-              <a href="{{ url_for('main.excluir_agendamento', id=agendamento.id) }}" class="btn btn-outline-danger btn-sm">Excluir</a>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="alert alert-secondary text-center">
-      Nenhum agendamento encontrado.
-    </div>
-  {% endif %}
 </div>
+
+<!-- Linha 2: Botões de ação -->
+<div class="row mb-4">
+  <div class="col text-end">
+    <a href="{{ url_for('main.pesquisar_cliente') }}" class="btn btn-info me-2">Pesquisar Cliente</a>
+    <a href="{{ url_for('main.cadastrar_cliente') }}" class="btn btn-success me-2">Cadastrar Cliente</a>
+    <a href="{{ url_for('main.agendar') }}" class="btn btn-primary me-2">Novo Agendamento</a>
+    <a href="{{ url_for('main.relatorio') }}" class="btn btn-warning me-2">Relatório</a>
+    <a href="{{ url_for('main.relatorio_salas') }}" class="btn btn-info">Relatório Salas</a>
+  </div>
+</div>
+
+<!-- Cards já renderizados no servidor -->
+<div class="row" id="lista-agendamentos">
+  {% for a in agendamentos %}
+    <div
+      class="col-md-4 mb-4 agendamento-item"
+      data-nome="{{ a.cliente.nome|lower }}"
+      data-email="{{ a.cliente.email|lower }}"
+      data-data="{{ a.data_inicio.strftime('%d/%m/%Y %H:%M')|lower }}"
+    >
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ a.cliente.nome }}</h5>
+          <p><span class="badge bg-info text-dark">{{ a.sala_rel.nome }}</span></p>
+          <p><strong>Início:</strong> {{ a.data_inicio.strftime('%d/%m/%Y %H:%M') }}</p>
+          <p><strong>Fim:</strong>   {{ a.data_fim.strftime('%d/%m/%Y %H:%M') }}</p>
+          <p><strong>Valor:</strong> R$ {{ '%.2f'|format(a.valor_total) }}</p>
+          <p><strong>Entrada:</strong> R$ {{ '%.2f'|format(a.entrada) }}</p>
+          <p><strong>Saldo:</strong> R$ {{ '%.2f'|format(a.saldo) }}</p>
+          {% if a.pago %}
+            <span class="badge bg-success">Pago</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Pendente</span>
+          {% endif %}
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('main.editar_agendamento', id=a.id) }}" class="btn btn-outline-primary btn-sm">Editar</a>
+          <a href="{{ url_for('main.excluir_agendamento', id=a.id) }}" class="btn btn-outline-danger btn-sm">Excluir</a>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+  const input     = document.getElementById('search-input');
+  const clearBtn  = document.getElementById('clear-btn');
+  const searchBtn = document.getElementById('search-btn');
+  const container = document.getElementById('lista-agendamentos');
+  const items     = Array.from(document.querySelectorAll('.agendamento-item'));
+
+  function filtrar() {
+    const termo = input.value.trim().toLowerCase();
+    let visiveis = 0;
+
+    items.forEach(el => {
+      const nome  = el.dataset.nome;
+      const email = el.dataset.email;
+      const data  = el.dataset.data;
+      const show  = !termo || nome.includes(termo) || email.includes(termo) || data.includes(termo);
+      el.style.display = show ? '' : 'none';
+      if (show) visiveis++;
+    });
+
+    // Remove mensagem antiga, se existir
+    const old = document.getElementById('no-results');
+    if (old) old.remove();
+
+    // Se nada ficou visível, insere a mensagem
+    if (visiveis === 0) {
+      const msg = document.createElement('div');
+      msg.id = 'no-results';
+      msg.className = 'col-12 text-center';
+      msg.innerHTML = `<p class="mt-4">Nenhum agendamento encontrado.</p>`;
+      container.appendChild(msg);
+    }
+  }
+
+  // Exibe/esconde o botão de limpar conforme digito
+  input.addEventListener('input', () => {
+    clearBtn.style.display = input.value.trim() ? 'block' : 'none';
+  });
+
+  // Busca ao clicar ou apertar Enter
+  searchBtn.addEventListener('click', filtrar);
+  input.addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      filtrar();
+    }
+  });
+
+  // Limpa filtro
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.style.display = 'none';
+    items.forEach(el => el.style.display = '');
+    const old = document.getElementById('no-results');
+    if (old) old.remove();
+  });
+
+  // Ao carregar, mostra tudo
+  document.addEventListener('DOMContentLoaded', () => {
+    items.forEach(el => el.style.display = '');
+  });
+</script>
+
 {% endblock %}

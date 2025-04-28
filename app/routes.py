@@ -3,7 +3,7 @@ from app import db
 from app.models import Cliente, Agendamento, Sala
 from app.utils import verificar_conflito
 from datetime import datetime
-from sqlalchemy import or_, cast
+from sqlalchemy import func, or_, cast
 from sqlalchemy.orm import joinedload
 import unicodedata
 import csv

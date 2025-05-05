@@ -44,6 +44,7 @@ class Agendamento(db.Model):
     metodo_pagamento_final = db.Column(db.String(20))
 
     pago = db.Column(db.Boolean, default=False)
+    observacoes = db.Column(db.Text, nullable=True)
 
 
 class Sala(db.Model):

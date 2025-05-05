@@ -167,6 +167,16 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label for="observacoes">Observações</label>
+        <textarea
+          class="form-control"
+          id="observacoes"
+          name="observacoes"
+          rows="3"
+          placeholder="Ex.: nº cadeiras, participantes, necessidades especiais…">{{ request.form.get('observacoes','') }}</textarea>
+      </div>
+
       <div class="mb-3">
         <label>Método de Pagamento:</label>
         <select name="metodo_pagamento_entrada" class="form-select">

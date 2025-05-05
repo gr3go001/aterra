@@ -6,8 +6,11 @@ from datetime import datetime
 from sqlalchemy import func, or_, cast
 from sqlalchemy.orm import joinedload
 import unicodedata
-import csv
+import pandas as pd
 import io
+from io import BytesIO
+from flask import send_file
+import csv
 
 main = Blueprint('main', __name__)
 
@@ -154,6 +157,7 @@ def agendar():
         acao = request.form.get('acao')
         nome_cliente = request.form.get('nome_cliente')
         cliente_id = request.form.get('cliente_id')
+        observacoes = request.form.get('observacoes')
 
         if acao == 'cadastrar':
             novo_cliente = Cliente(
@@ -163,7 +167,7 @@ def agendar():
                 endereco=request.form['endereco'],
                 cpf=request.form['cpf'],
                 servico=request.form['servico']
-            )
+                )
             db.session.add(novo_cliente)
             db.session.commit()
             flash('Cliente cadastrado com sucesso!', 'success')
@@ -201,8 +205,10 @@ def agendar():
                 metodo_pagamento_entrada=request.form.get('metodo_pagamento_entrada'),
                 metodo_pagamento_final=None,
                 data_pagamento_final=None,
-                pago=(float(request.form['valor_total']) - float(request.form['entrada']) == 0)
+                pago=(float(request.form['valor_total']) - float(request.form['entrada']) == 0),
+                observacoes=observacoes
             )
+
 
             db.session.add(agendamento)
             db.session.commit()
@@ -384,7 +390,7 @@ def exportar_relatorio_csv():
     for a in agendamentos:
         writer.writerow([
             a.cliente.nome,
-            a.sala.nome if a.sala else '',
+            a.sala_rel.nome if a.sala_rel.nome else '',
             a.data_inicio.strftime('%d/%m/%Y %H:%M'),
             a.data_fim.strftime('%d/%m/%Y %H:%M'),
             f'{a.valor_total:.2f}',
@@ -398,3 +404,59 @@ def exportar_relatorio_csv():
     return Response(output, mimetype='text/csv', headers={
         'Content-Disposition': 'attachment; filename=relatorio_agendamentos.csv'
     })
+
+@main.route('/exportar_excel')
+def exportar_excel():
+    # 1) Busca os agendamentos no banco
+    ags = Agendamento.query.order_by(Agendamento.data_inicio).all()
+
+    # 2) Monta uma lista de dicionários
+    data = []
+    for a in ags:
+        data.append({
+            'Cliente':        a.cliente.nome,
+            'Sala':           a.sala_rel.nome,
+            'Início':         a.data_inicio.strftime('%d/%m/%Y %H:%M'),
+            'Fim':            a.data_fim.strftime('%d/%m/%Y %H:%M'),
+            'Valor Total':    f"{a.valor_total:.2f}",
+            'Entrada':        f"{a.entrada:.2f}",
+            'Saldo':          f"{a.saldo:.2f}",
+            'Pago':           'Sim' if a.pago else 'Não',
+            'Data Pagamento': a.data_pagamento_entrada.strftime('%d/%m/%Y') if a.data_pagamento_entrada else '',
+            'Observações':    a.observacoes or ''
+        })
+
+    # 3) Cria o DataFrame
+    df = pd.DataFrame(data)
+
+    # 4) Escreve no Excel usando BytesIO
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Agendamentos')
+        ws = writer.sheets['Agendamentos']
+
+        # 4.1) Cabeçalho em negrito
+        for cell in ws[1]:
+            cell.font = cell.font.copy(bold=True)
+
+        # 4.2) Auto-ajusta largura das colunas
+        for col in ws.columns:
+            max_len = max(len(str(c.value or '')) for c in col)
+            ws.column_dimensions[col[0].column_letter].width = max_len + 2
+
+        # 4.3) Fit to width e orientação paisagem
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_margins.left   = 0.5
+        ws.page_margins.right  = 0.5
+        ws.page_margins.top    = 0.5
+        ws.page_margins.bottom = 0.5
+
+    # 5) Volta ao início do buffer e envia o arquivo
+    output.seek(0)
+    return send_file(
+        output,
+        download_name='agendamentos.xlsx',
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )

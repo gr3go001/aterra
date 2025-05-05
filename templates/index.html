@@ -65,7 +65,8 @@
       data-nome="{{ a.cliente.nome|lower }}"
       data-email="{{ a.cliente.email|lower }}"
       data-data="{{ a.data_inicio.strftime('%d/%m/%Y %H:%M')|lower }}"
-    >
+      data-observacoes="{{ (a.observacoes or '')|lower }}"    <!-- NOVO -->
+      
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">{{ a.cliente.nome }}</h5>
@@ -75,12 +76,14 @@
           <p><strong>Valor:</strong> R$ {{ '%.2f'|format(a.valor_total) }}</p>
           <p><strong>Entrada:</strong> R$ {{ '%.2f'|format(a.entrada) }}</p>
           <p><strong>Saldo:</strong> R$ {{ '%.2f'|format(a.saldo) }}</p>
+          <p class="mt-2"><strong>Observações:</strong> {{ a.observacoes or '–' }}</p>  
           {% if a.pago %}
-            <span class="badge bg-success">Pago</span>
-          {% else %}
-            <span class="badge bg-warning text-dark">Pendente</span>
-          {% endif %}
+          <span class="badge bg-success">Pago</span>
+        {% else %}
+          <span class="badge bg-warning text-dark">Pendente</span>
+        {% endif %}
         </div>
+
         <div class="card-footer d-flex justify-content-between">
           <a href="{{ url_for('main.editar_agendamento', id=a.id) }}" class="btn btn-outline-primary btn-sm">Editar</a>
           <a href="{{ url_for('main.excluir_agendamento', id=a.id) }}" class="btn btn-outline-danger btn-sm">Excluir</a>
@@ -102,10 +105,15 @@
     let visiveis = 0;
 
     items.forEach(el => {
-      const nome  = el.dataset.nome;
-      const email = el.dataset.email;
-      const data  = el.dataset.data;
-      const show  = !termo || nome.includes(termo) || email.includes(termo) || data.includes(termo);
+      const nome        = el.dataset.nome;
+      const email       = el.dataset.email;
+      const data        = el.dataset.data;
+      const observacoes = el.dataset.observacoes;           // NOVO
+      const show  = !termo
+        || nome.includes(termo)
+        || email.includes(termo)
+        || data.includes(termo)
+        || observacoes.includes(termo);                    // NOVO
       el.style.display = show ? '' : 'none';
       if (show) visiveis++;
     });

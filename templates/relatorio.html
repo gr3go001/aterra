@@ -35,11 +35,11 @@
   </form>
 
   {% if agendamentos %}
-    <form method="post" action="{{ url_for('main.exportar_relatorio_csv') }}">
-      <input type="hidden" name="data_inicio" value="{{ request.form.get('data_inicio', '') }}">
-      <input type="hidden" name="data_fim" value="{{ request.form.get('data_fim', '') }}">
-      <button type="submit" class="btn btn-success mb-3">Exportar CSV</button>
-    </form>
+  <a href="{{ url_for('main.exportar_excel') }}"
+  class="btn btn-success mb-3">
+ 📥 Exportar XLSX
+</a>
+
 
     <table class="table table-bordered table-striped">
       <thead class="table-light">
@@ -58,7 +58,7 @@
         {% for agendamento in agendamentos %}
           <tr>
             <td>{{ agendamento.cliente.nome }}</td>
-            <td>{{ agendamento.sala }}</td>
+            <td>{{ agendamento.sala_rel.nome }}</td>
             <td>{{ agendamento.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
             <td>{{ agendamento.data_fim.strftime('%d/%m/%Y %H:%M') }}</td>
             <td>R$ {{ '%.2f' | format(agendamento.valor_total) }}</td>
@@ -71,13 +71,6 @@
                 <span class="badge bg-warning text-dark">Não</span>
               {% endif %}
             </td>
-            <!-- <td>
-              {% if agendamento.data_pagamento %}
-                {{ agendamento.data_pagamento.strftime('%d/%m/%Y') }}
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td> -->
           </tr>
         {% endfor %}    
       </tbody>

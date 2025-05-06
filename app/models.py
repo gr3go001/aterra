@@ -1,5 +1,7 @@
 from app import db 
 from sqlalchemy.orm import relationship
+from datetime import datetime
+from app import db
 
 
 
@@ -52,3 +54,23 @@ class Sala(db.Model):
     nome = db.Column(db.String(50), nullable=False, unique=True)
 
     agendamentos = db.relationship('Agendamento', back_populates='sala_rel')
+
+
+class Fluxodecaixa(db.Model):
+    __tablename__ = 'fluxo_caixa'
+
+    id = db.Column(db.Integer, primary_key=True)
+    data = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    descricao = db.Column(db.Text)
+    tipo = db.Column(db.String(10), nullable=False)  # entrada ou saida
+    categoria = db.Column(db.String(100))
+    valor = db.Column(db.Numeric(10, 2), nullable=False)
+    forma_pagamento = db.Column(db.String(50))
+
+    origem_agendamento_id = db.Column(db.Integer, db.ForeignKey('agendamento.id'), nullable=True)
+    agendamento = db.relationship('Agendamento', backref='movimentacoes')
+
+    observacoes = db.Column(db.Text)
+
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

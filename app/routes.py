@@ -373,37 +373,7 @@ def relatorio():
             flash("Filtrando agendamentos entre as datas.", "info")
     return render_template('relatorio.html', agendamentos=agendamentos)
 
-@main.route('/exportar_relatorio_csv', methods=['POST'])
-def exportar_relatorio_csv():
-    data_inicio = request.form.get('data_inicio')
-    data_fim = request.form.get('data_fim')
 
-    agendamentos = Agendamento.query.join(Cliente).filter(
-        Agendamento.data_inicio >= data_inicio,
-        Agendamento.data_inicio <= data_fim
-    ).order_by(Agendamento.data_inicio.asc()).all()
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Cliente', 'Sala', 'Início', 'Fim', 'Valor Total', 'Entrada', 'Saldo', 'Pago', 'Data do Pagamento'])
-
-    for a in agendamentos:
-        writer.writerow([
-            a.cliente.nome,
-            a.sala_rel.nome if a.sala_rel.nome else '',
-            a.data_inicio.strftime('%d/%m/%Y %H:%M'),
-            a.data_fim.strftime('%d/%m/%Y %H:%M'),
-            f'{a.valor_total:.2f}',
-            f'{a.entrada:.2f}',
-            f'{a.saldo:.2f}',
-            'Sim' if a.pago else 'Não',
-            a.data_pagamento_entrada.strftime('%d/%m/%Y') if a.data_pagamento_entrada else ''
-        ])
-
-    output.seek(0)
-    return Response(output, mimetype='text/csv', headers={
-        'Content-Disposition': 'attachment; filename=relatorio_agendamentos.csv'
-    })
 
 @main.route('/exportar_excel')
 def exportar_excel():
@@ -460,3 +430,37 @@ def exportar_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+@main.route('/fluxo_caixa', methods=['GET', 'POST'])
+def fluxo_caixa():
+    if request.method == 'POST':
+        try:
+            tipo = request.form.get('tipo')
+            valor = request.form.get('valor')
+            categoria = request.form.get('categoria')
+            forma_pagamento = request.form.get('forma_pagamento')
+            descricao = request.form.get('descricao')
+            origem_agendamento_id = request.form.get('origem_agendamento_id') or None
+            observacoes = request.form.get('observacoes')
+            data = request.form.get('data') or datetime.today().date()
+
+            nova_movimentacao = FluxoCaixa(
+                tipo=tipo,
+                valor=valor,
+                categoria=categoria,
+                forma_pagamento=forma_pagamento,
+                descricao=descricao,
+                origem_agendamento_id=origem_agendamento_id,
+                observacoes=observacoes,
+                data=data
+            )
+
+            db.session.add(nova_movimentacao)
+            db.session.commit()
+            flash("Movimentação registrada com sucesso!", "success")
+            return redirect('/fluxo_caixa')
+        except Exception as e:
+            flash(f"Erro ao registrar movimentação: {str(e)}", "danger")
+
+    agendamentos = Agendamento.query.order_by(Agendamento.data_inicio.desc()).all()
+    return render_template('fluxo_caixa.html', agendamentos=agendamentos)

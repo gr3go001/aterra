@@ -1,0 +1,27 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: joao        # substitua
+      POSTGRES_PASSWORD: impossivel999      # substitua
+      POSTGRES_DB: agenda
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"                     # mapeia a porta interna 8000
+    depends_on:
+      - db
+    environment:
+      FLASK_ENV: production
+      DATABASE_URL: "postgresql://joao:impossivel999@localhost/agenda"
+      SECRET_KEY: "uma-string-supersecreta-padrao"
+      # se tiver mais vars, adicione aqui
+
+volumes:
+  pgdata:

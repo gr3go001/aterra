@@ -56,7 +56,7 @@ class Sala(db.Model):
     agendamentos = db.relationship('Agendamento', back_populates='sala_rel')
 
 
-class Fluxodecaixa(db.Model):
+class FluxoCaixa(db.Model):
     __tablename__ = 'fluxo_caixa'
 
     id = db.Column(db.Integer, primary_key=True)

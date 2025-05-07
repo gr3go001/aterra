@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, Response
 from app import db
-from app.models import Cliente, Agendamento, Sala
+from app.models import Cliente, Agendamento, Sala, FluxoCaixa
 from app.utils import verificar_conflito
 from datetime import datetime
 from sqlalchemy import func, or_, cast
@@ -333,7 +333,7 @@ def editar_cliente(id):
 def buscar_clientes():
     termo = request.args.get('termo', '')
     clientes = Cliente.query.filter(
-        (Cliente.nome.ilike(f'%{termo}%')) |
+        (Cliente.nome.ilike(f'%{termo}%')) 
         (Cliente.email.ilike(f'%{termo}%'))
     ).all()
     return jsonify([{
@@ -460,7 +460,60 @@ def fluxo_caixa():
             flash("Movimentação registrada com sucesso!", "success")
             return redirect('/fluxo_caixa')
         except Exception as e:
+            print("Erro ao salvar no banco:", e)
             flash(f"Erro ao registrar movimentação: {str(e)}", "danger")
+            
 
     agendamentos = Agendamento.query.order_by(Agendamento.data_inicio.desc()).all()
     return render_template('fluxo_caixa.html', agendamentos=agendamentos)
+
+@main.route('/dashboard_fluxo_caixa')
+def dashboard_fluxo_caixa():
+    from app.models import FluxoCaixa
+
+    # Coleta todos os dados do fluxo
+    movimentacoes = FluxoCaixa.query.order_by(FluxoCaixa.data).all()
+
+    total_entradas = sum(m.valor for m in movimentacoes if m.tipo == 'entrada')
+    total_saidas = sum(m.valor for m in movimentacoes if m.tipo == 'saida')
+    saldo = total_entradas - total_saidas
+
+    # Dados por mês (YYYY-MM)
+    from collections import defaultdict
+    import calendar
+
+    dados_por_mes = defaultdict(lambda: {'entrada': 0, 'saida': 0})
+
+    for m in movimentacoes:
+        chave = m.data.strftime('%Y-%m')
+        dados_por_mes[chave][m.tipo] += float(m.valor)
+
+    meses_labels = []
+    entradas_valores = []
+    saidas_valores = []
+
+    for chave in sorted(dados_por_mes.keys()):
+        ano, mes = chave.split('-')
+        nome_mes = f"{calendar.month_abbr[int(mes)]}/{ano[-2:]}"
+        meses_labels.append(nome_mes)
+        entradas_valores.append(dados_por_mes[chave]['entrada'])
+        saidas_valores.append(dados_por_mes[chave]['saida'])
+
+    # Gráfico de pizza por forma de pagamento (só para entradas)
+    from collections import Counter
+
+    formas_pagamento = Counter(
+        m.forma_pagamento for m in movimentacoes if m.tipo == 'entrada' and m.forma_pagamento
+    )
+
+    return render_template(
+        'dashboard_fluxo_caixa.html',
+        total_entradas=total_entradas,
+        total_saidas=total_saidas,
+        saldo=saldo,
+        meses_labels=meses_labels,
+        entradas_valores=entradas_valores,
+        saidas_valores=saidas_valores,
+        formas_pagamento=dict(formas_pagamento),
+        movimentacoes=movimentacoes
+    )

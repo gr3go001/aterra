@@ -28,12 +28,17 @@
 </style>
 
 <!-- Linha 1: Título e buscador -->
-<div class="row align-items-center mb-3">
+<div class="row align-items-center mb-3 p-4 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white">
   <div class="col-md-6">
     <h2>Agendamentos</h2>
   </div>
   <div class="col-md-6 text-end">
     <div class="search-container">
+      <!-- <button onclick="toggleTheme()" class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600">
+        🌓 Alternar tema
+      </button>
+       -->
+      
       <input
         type="text"
         id="search-input"
@@ -47,7 +52,7 @@
 </div>
 
 <!-- Linha 2: Botões de ação -->
-<div class="row mb-4">
+<div class="row mb-4 p-4 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white">
   <div class="col text-end">
     <a href="{{ url_for('main.pesquisar_cliente') }}" class="btn btn-info me-2">Pesquisar Cliente</a>
     <a href="{{ url_for('main.cadastrar_cliente') }}" class="btn btn-success me-2">Cadastrar Cliente</a>
@@ -55,11 +60,12 @@
     <a href="{{ url_for('main.relatorio') }}" class="btn btn-warning me-2">Relatório</a>
     <a href="{{ url_for('main.relatorio_salas') }}" class="btn btn-info">Relatório Salas</a>
     <a href="{{ url_for('main.fluxo_caixa') }}" class="btn btn-success me-2">Fluxo de Caixa</a>
+    <a href="{{ url_for('main.dashboard_fluxo_caixa') }}" class="btn btn-info me-2">Dashboard</a>
   </div>
 </div>
 
 <!-- Cards já renderizados no servidor -->
-<div class="row" id="lista-agendamentos">
+<div class="row p-4 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white" id="lista-agendamentos" >
   {% for a in agendamentos %}
     <div
       class="col-md-4 mb-4 agendamento-item"
@@ -68,7 +74,7 @@
       data-data="{{ a.data_inicio.strftime('%d/%m/%Y %H:%M')|lower }}"
       data-observacoes="{{ (a.observacoes or '')|lower }}"    <!-- NOVO -->
       
-      <div class="card shadow-sm h-100">
+      <div class="card shadow-sm h-100 p-4 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white">
         <div class="card-body">
           <h5 class="card-title">{{ a.cliente.nome }}</h5>
           <p><span class="badge bg-info text-dark">{{ a.sala_rel.nome }}</span></p>
@@ -85,7 +91,7 @@
         {% endif %}
         </div>
 
-        <div class="card-footer d-flex justify-content-between">
+        <div class="card-footer d-flex justify-content-between p-4 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white">
           <a href="{{ url_for('main.editar_agendamento', id=a.id) }}" class="btn btn-outline-primary btn-sm">Editar</a>
           <a href="{{ url_for('main.excluir_agendamento', id=a.id) }}" class="btn btn-outline-danger btn-sm">Excluir</a>
         </div>
@@ -160,6 +166,18 @@
   document.addEventListener('DOMContentLoaded', () => {
     items.forEach(el => el.style.display = '');
   });
+
+  //Modo dark
+    function toggleTheme() {
+      const html = document.documentElement
+      if (html.classList.contains("dark")) {
+        html.classList.remove("dark")
+        localStorage.setItem("theme", "light")
+      } else {
+        html.classList.add("dark")
+        localStorage.setItem("theme", "dark")
+      }
+    }
 </script>
 
 {% endblock %}

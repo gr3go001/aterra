@@ -49,9 +49,9 @@
           <label for="origem_agendamento_id" class="form-label">Vincular a Agendamento (opcional)</label>
           <select name="origem_agendamento_id" class="form-select">
             <option value="">Sem vínculo</option>
-            {% for ag in agendamentos %}
-              <option value="{{ ag.id }}">
-                #{{ ag.id }} - {{ ag.cliente.nome }} ({{ ag.data_inicio.strftime('%d/%m/%Y') }}) - Sala {{ ag.sala_rel.nome }}
+            {% for a in agendamentos %}
+              <option value="{{ a.id }}">
+                #{{ a.id }} - {{ a.cliente.nome }} ({{ a.data_inicio.strftime('%d/%m/%Y') }}) - Sala {{ a.sala_rel.nome }}
               </option>
             {% endfor %}
           </select>
@@ -71,8 +71,8 @@
           <button type="submit" class="btn btn-success">Salvar</button>
           <button type="reset" class="btn btn-secondary">Limpar</button>
         </div>
-
       </form>
+      <br>
     </div>
   </div>
 </div>

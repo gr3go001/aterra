@@ -518,16 +518,23 @@ def dashboard_fluxo_caixa():
         movimentacoes=movimentacoes
     )
 
-@main.route('/criar_salas')
-def criar_salas():
+@main.route('/resetar_salas')
+def resetar_salas():
     from app.models import Sala
-    if Sala.query.count() == 0:
-        salas = [
-            Sala(nome="Sala Azul"),
-            Sala(nome="Sala Verde"),
-            Sala(nome="Sala Terapia 1")
-        ]
-        db.session.add_all(salas)
+    try:
+        # Excluir todas as salas
+        Sala.query.delete()
         db.session.commit()
-        return "✅ Salas criadas com sucesso!"
-    return "ℹ️ As salas já existem."
+
+        # Salas corretas
+        nomes = ["Galpão", "Ayurveda", "Shiva", "Arco-Íris", "Positividade"]
+        for nome in nomes:
+            nova_sala = Sala(nome=nome)
+            db.session.add(nova_sala)
+
+        db.session.commit()
+        return "✅ Salas foram resetadas e recriadas com sucesso!"
+    
+    except Exception as e:
+        db.session.rollback()
+        return f"❌ Erro ao resetar salas: {str(e)}"

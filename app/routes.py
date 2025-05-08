@@ -517,3 +517,17 @@ def dashboard_fluxo_caixa():
         formas_pagamento=dict(formas_pagamento),
         movimentacoes=movimentacoes
     )
+
+@main.route('/criar_salas')
+def criar_salas():
+    from app.models import Sala
+    if Sala.query.count() == 0:
+        salas = [
+            Sala(nome="Sala Azul"),
+            Sala(nome="Sala Verde"),
+            Sala(nome="Sala Terapia 1")
+        ]
+        db.session.add_all(salas)
+        db.session.commit()
+        return "✅ Salas criadas com sucesso!"
+    return "ℹ️ As salas já existem."

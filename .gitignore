@@ -4,5 +4,5 @@ github/
 __pycache__/
 *.pyc
 .env*
-
+key_git
 

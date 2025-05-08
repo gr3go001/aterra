@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os 
 
 
-env_file = ".env.production" if os.getenv("FLASK_ENV") == "production" else ".env.production"
+env_file = ".env.production" if os.getenv("FLASK_ENV") == "production" else ".env"
 load_dotenv(env_file)
 
 class Config:
